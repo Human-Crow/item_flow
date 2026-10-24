@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#141519"/>
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#2a2d34" stroke-width="8"/>
+  <!-- flow lines -->
+  <g fill="none" stroke="#e0c060" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M118 256 H256"/>
+    <path d="M256 256 V152 H392"/>
+    <path d="M256 256 V360 H392"/>
+  </g>
+  <!-- input -->
+  <rect x="62" y="200" width="112" height="112" rx="18" fill="#1c3a28" stroke="#4cd07d" stroke-width="16"/>
+  <!-- splitter -->
+  <rect x="204" y="204" width="104" height="104" rx="18" fill="#3b2a52" stroke="#b59be3" stroke-width="14"/>
+  <circle cx="256" cy="256" r="16" fill="#b59be3"/>
+  <!-- outputs -->
+  <rect x="352" y="96" width="112" height="112" rx="18" fill="#15324a" stroke="#4ca8f0" stroke-width="16"/>
+  <rect x="352" y="304" width="112" height="112" rx="18" fill="#15324a" stroke="#4ca8f0" stroke-width="16"/>
+  <!-- items -->
+  <g fill="#ff9a52" stroke="#0b0c0f" stroke-width="6">
+    <circle cx="118" cy="256" r="22"/>
+    <circle cx="408" cy="152" r="22"/>
+    <circle cx="408" cy="360" r="22"/>
+  </g>
+</svg>

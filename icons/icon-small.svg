@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#141519"/>
+  
+  <!-- flow lines -->
+  <g fill="none" stroke="#e0c060" stroke-width="48" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M118 256 H256"/>
+    <path d="M256 256 V152 H392"/>
+    <path d="M256 256 V360 H392"/>
+  </g>
+  <!-- input -->
+  <rect x="62" y="200" width="112" height="112" rx="18" fill="#1c3a28" stroke="#4cd07d" stroke-width="28"/>
+  <!-- splitter -->
+  <rect x="204" y="204" width="104" height="104" rx="18" fill="#3b2a52" stroke="#b59be3" stroke-width="28"/>
+  
+  <!-- outputs -->
+  <rect x="352" y="96" width="112" height="112" rx="18" fill="#15324a" stroke="#4ca8f0" stroke-width="28"/>
+  <rect x="352" y="304" width="112" height="112" rx="18" fill="#15324a" stroke="#4ca8f0" stroke-width="28"/>
+  
+</svg>

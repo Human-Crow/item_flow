@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141519">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Item Flow</title>
+<meta name="description" content="See how items flow through a Builderment blueprint: speeds, jams, bottlenecks, and balancer / splitter / ratio tests.">
+<link rel="icon" type="image/svg+xml" href="icons/icon-small.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/favicon-192.png">
+<link rel="icon" href="icons/favicon.ico" sizes="16x16 32x32">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="top">
+  <input id="bp" placeholder="blueprint id or link" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+  <button id="loadBtn" class="primary">Load</button>
+  <button id="fileBtn" title="open a .blp file">File</button>
+  <input id="fileIn" type="file" accept=".blp,.blueprint,application/octet-stream" hidden>
+</div>
+<div id="status"><span class="msg" id="msg">starting ...</span><button id="stopBtn">Stop</button></div>
+<div id="main">
+  <div id="mapwrap">
+    <canvas id="map"></canvas>
+    <div id="loading">Starting ...</div>
+    <div id="summary"></div>
+    <div id="mapbtns">
+      <button id="calcBtn" class="primary" title="recalculate">▶</button>
+      <button id="fitBtn" title="fit to screen">Fit</button>
+      <button id="turnBtn" title="turn 90°">⟳</button>
+    </div>
+    <div id="card"><button class="x" id="cardX">×</button><pre id="cardText"></pre><div class="row" id="cardRow"></div></div>
+  </div>
+  <div id="panel">
+    <div id="grip"></div>
+    <div id="tabs">
+      <button data-tab="inputs" class="on">Inputs</button>
+      <button data-tab="totals">Totals</button>
+      <button data-tab="problems">Problems<span class="badge" id="probBadge"></span></button>
+      <button data-tab="tests">Tests</button>
+      <button data-tab="more">More</button>
+    </div>
+    <div class="page on" id="p-inputs">
+      <div class="bar"><input id="allIn" type="text" inputmode="decimal" placeholder="all inputs, e.g. 480"><button id="allBtn">Set all</button><button id="calc2" class="primary">Calculate</button></div>
+      <div id="inputs" class="list"></div>
+    </div>
+    <div class="page" id="p-totals">
+      <div class="bar" style="justify-content: space-between">
+        <div id="totalTxt" class="mono"></div>
+        <div class="seg"><button data-mode="item" class="on">per item</button><button data-mode="output">per output</button></div>
+      </div>
+      <div id="totals" class="list"></div>
+      <h3>Alt recipes <span class="dimc" style="text-transform:none;letter-spacing:0;font-weight:400">alt / (std + alt)</span></h3>
+      <div id="alts" class="grid2"></div>
+    </div>
+    <div class="page" id="p-problems">
+      <div id="probSum" class="big"></div>
+      <div id="probs" class="prob"></div>
+    </div>
+    <div class="page" id="p-tests">
+      <div class="help">Test the blueprint as a balancer, splitter or ratio splitter. Input arms on one side, output arms on the other (or use “guess in/out belts” under More).</div>
+      <div class="test-btns"><button data-test="balancer">Balancer</button><button data-test="splitter">Splitter</button><button data-test="ratio">Ratio</button></div>
+      <div id="testOut"></div>
+    </div>
+    <div class="page" id="p-more">
+      <h3>Settings</h3>
+      <div class="settings">
+        <span>Belt speed</span><input id="sBelt" type="text" inputmode="decimal" placeholder="empty = no limit">
+        <span>UG distance</span><select id="sUg"><option>4</option><option>5</option><option selected>6</option></select>
+        <span>World gen</span><select id="sGen"><option selected>1</option><option>2</option></select>
+      </div>
+      <label class="check"><input type="checkbox" id="sArm" checked> arm speed by tier (15 / 30 / 60 / 90)</label>
+      <label class="check"><input type="checkbox" id="sGuess"> guess in/out belts on the edge</label>
+      <label class="check"><input type="checkbox" id="sAnim" checked> moving dots</label>
+      <label class="check"><input type="checkbox" id="sNum" checked> numbers on tiles</label>
+      <h3>Legend</h3>
+      <div class="legend" id="legend"></div>
+      <div class="legend" id="legendItems" style="margin-top:10px; grid-template-columns: repeat(2, 1fr)"></div>
+      <h3>How to use</h3>
+      <div class="help">
+        <b>Drag</b> to move, <b>pinch</b> to zoom, <b>double-tap</b> to zoom in. <b>Tap</b> a tile for its details.<br>
+        Change input amounts under Inputs, then <b>Calculate</b> (or ▶ on the map).
+        A red <b>→X</b> next to an input means only X of it actually goes in.<br>
+        <b>Guess in/out belts</b>: pretend marker arms on edge belts where items seem to come in or go out.
+        Tap one (or its belt) and use the button on its card to switch it off; dashed outlines are possible
+        ones that are switched off — tap them to switch them on.<br>
+        Outlines: <span style="color:#4cd07d">input</span>, <span style="color:#4ca8f0">output</span>,
+        <span style="color:#ffb347">at max speed</span>, <span style="color:#ff5fd2">limits the output</span>,
+        <span style="color:#8a6a3a">items wait</span>, <span style="color:#ff4d4d">jam</span>.
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
