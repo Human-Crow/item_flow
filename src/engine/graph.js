@@ -4,7 +4,7 @@ import { pk, px, py, padd, P, SINK, DIRS, sides, EPS, INF, Heap, msum, clean, fm
 import {
   settings, FACTORIES, END_POINTS, SIDE_INPUTS, PRODUCERS, LOGISTICS, BELT_LIKE, CHAIN_LIKE, EXTRACTOR_ITEMS,
   EXTRACTOR_ITEM, DEFAULT_ITEM, SPLITTER_ACCEPTS_SIDES, COAL_FUEL_PER_MIN, NUCLEAR_FUEL_PER_MIN,
-  POWER_MAX_ROUNDS, POWER_ROUNDS_UNSETTLED, footprint, backRow, outputTile, recipeOf, craftsPerMin, armSpeed,
+  POWER_MAX_ROUNDS, POWER_ROUNDS_UNSETTLED, footprint, backRow, beltInputs, outputTile, recipeOf, craftsPerMin, armSpeed,
   plantArea, takes, frontOf, backOf, itemName, idLabel,
 } from "./model.js";
 import { simulate } from "./simulate.js";
@@ -101,7 +101,7 @@ export class FlowGraph {
         const mid = padd(t.pos, -d[0], -d[1]);
         return target === mid && source === padd(mid, -d[0], -d[1]);
       }
-      return backRow(t).includes(target) && source === padd(target, -d[0], -d[1]);
+      return beltInputs(t).includes(target) && source === padd(target, -d[0], -d[1]);
     }
     if (!LOGISTICS.has(t.id)) return false;
     if (byArm) {

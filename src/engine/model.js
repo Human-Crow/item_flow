@@ -136,6 +136,14 @@ export function backRow(b) {
   for (let c = c0; c < c0 + w; c++) out.push(pk(b.x + a * d[0] + c * left[0], b.y + a * d[1] + c * left[1]));
   return out;
 }
+/** tiles where a belt can feed the building: the whole back row, but power plants take belts on
+ *  one back tile only (in line with the anchor: the middle for nuclear, the second for coal) */
+export function beltInputs(b) {
+  if (b.id !== B.Coal_Power_Plant && b.id !== B.Nuclear_Power_Plant) return backRow(b);
+  const [, dep] = SIZES[b.id] ?? [1, 1];
+  const d = DIRS[b.o], a = -Math.floor((dep - 1) / 2);
+  return [pk(b.x + a * d[0], b.y + a * d[1])];
+}
 /** front row, middle: where a factory puts items on a belt */
 export function outputTile(b) {
   const [, dep] = SIZES[b.id] ?? [1, 1];

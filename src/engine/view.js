@@ -5,7 +5,7 @@ import { pk, px, py, P, SINK, INF, fmtNum, pyFixed, msum } from "./util.js";
 import {
   settings, FACTORIES, END_POINTS, PRODUCERS, LOGISTICS, SIDE_INPUTS, NO_BELT_OUTPUT, BELT_LIKE,
   COAL_FUEL_PER_MIN, NUCLEAR_FUEL_PER_MIN, itemName, idLabel, oLabel, recipeLabel, buildingsFromSave,
-  copyBuilding, footprint, backRow, outputTile, plantArea, altUsage, altBuildings, blueprintEdges,
+  copyBuilding, footprint, backRow, beltInputs, outputTile, plantArea, altUsage, altBuildings, blueprintEdges,
   isInput, guessInOut,
 } from "./model.js";
 import { buildAndSolve } from "./graph.js";
@@ -145,7 +145,7 @@ function blockDetails(p, b) {
   const takesBelts = (FACTORIES.has(b.id) && b.recipe) || END_POINTS.has(b.id);
   if (SIDE_INPUTS.has(b.id)) d.side = 1;
   else if (takesBelts) {
-    const back = b.id === B.Earth_Teleporter ? [pk(px(p) - dx, py(p) - dy)] : backRow(b);
+    const back = b.id === B.Earth_Teleporter ? [pk(px(p) - dx, py(p) - dy)] : beltInputs(b);
     const xs = back.map(px), ys = back.map(py);
     d.back = [Math.min(...xs), Math.min(...ys), Math.max(...xs) + 1, Math.max(...ys) + 1, dx, dy];
   }
