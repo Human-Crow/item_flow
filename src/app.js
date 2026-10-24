@@ -10,7 +10,7 @@ const store = {
 const BG = "#141519", GRIDC = "#22242a", NUMBER_BOX = "#0e0f12", TUNNEL = "#05080b", DOT_OUTLINE = "#0b0c0f";
 const IN_COLOR = "#4cd07d", OUT_COLOR = "#4ca8f0";
 const LINE_MAX_WIDTH = 0.16, DOT_SIZE = 0.13, DOT_SPEED = 1.2, MAX_DOTS = 3000;
-const MIN_DETAIL = 22, MIN_NUMBER = 28, MIN_DOT = 10, MIN_FONT = 7;
+const MIN_DETAIL = 22, MIN_NUMBER = 28, MIN_DOT = 10, MIN_FONT = 7, MIN_SIGN = 12;
 const LEGEND_TILES = [["#2c2f37", "#7c808b", "Belt"], ["#3b2a52", "#b59be3", "Splitter"], ["#15384d", "#6db8e0", "UG in"],
   ["#14452f", "#6fdba6", "UG out"], ["#4a3618", "#ffcf7a", "Arm"], ["#3a3b40", "#d0d2d8", "Storage"],
   ["#4a2a2a", "#e68a8a", "Factory"], ["#25304d", "#8fa2f0", "End point"], ["#2e3d1c", "#b7d968", "Producer"],
@@ -154,7 +154,10 @@ async function openSave(save, name) {
   await ready;
   const b = save && save.buildings;
   // only what the calculation needs (typed arrays are copied to the background worker as they are)
-  const slim = { name: save && save.name || "", buildings: b ? { count: b.count, id: b.id, x: b.x, y: b.y, o: b.o, tier: b.tier, rec_fil: b.rec_fil } : null };
+  // sign texts: only the ones that are set (the full list has a string for every building)
+  let text = null;
+  if (b && b.text) { text = {}; for (let i = 0; i < b.count; i++) if (b.text[i]) text[i] = b.text[i]; }
+  const slim = { name: save && save.name || "", buildings: b ? { count: b.count, id: b.id, x: b.x, y: b.y, o: b.o, tier: b.tier, rec_fil: b.rec_fil, text } : null };
   const info = await call("load", { save: slim, name });
   lastSave = slim; lastName = info.name || name;
   T = null; dots = []; dirty(true);
@@ -446,6 +449,7 @@ function drawStatic(g, s, ox, oy, vr, atlasMode = false) {
   if (atlasMode) return;
   if (s >= MIN_DETAIL) for (const k of ids) drawDetails(g, k, s, ox, oy);
   if (S.nums && s >= MIN_NUMBER) drawNumbers(g, ids, s, ox, oy);
+  if (s >= MIN_SIGN) drawSigns(g, ids, s, ox, oy);
 }
 
 function chevron(g, cx, cy, dx, dy, along, size, s, col, lw) {
@@ -586,6 +590,44 @@ function drawNumbers(g, ids, s, ox, oy) {
     if (tw > avail) mid = ax === 1 ? x1 - tw / 2 - 2 : ax === -1 ? x0 + tw / 2 + 2 : mid;
     g.fillStyle = NUMBER_BOX; g.fillRect(mid - tw / 2 - 2, yEdge - fh, tw + 4, fh);
     g.fillStyle = "#fff"; g.fillText(txt, mid, yEdge - fh / 2);
+  }
+}
+// sign texts: a label on the sign, wider than the tile, wrapped to a few lines
+function wrapText(g, text, maxW, maxLines) {
+  const out = [];
+  for (const para of String(text).split(/\r?\n/)) {
+    let line = "";
+    for (const word of para.split(/\s+/).filter(Boolean)) {
+      const next = line ? line + " " + word : word;
+      if (g.measureText(next).width <= maxW || !line) line = next;
+      else { out.push(line); line = word; }
+    }
+    out.push(line);
+  }
+  const lines = out.filter((l, i) => l || i < out.length - 1);
+  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += " …"; }
+  return lines.map((l) => {        // one very long word: cut it
+    if (g.measureText(l).width <= maxW) return l;
+    while (l.length > 1 && g.measureText(l + "…").width > maxW) l = l.slice(0, -1);
+    return l + "…";
+  });
+}
+function drawSigns(g, ids, s, ox, oy) {
+  const tiles = view.tiles;
+  const px = Math.max(9, Math.min(15, Math.round(s * 0.32)));
+  const maxW = Math.max(90, s * 5), lh = Math.round(px * 1.25);
+  g.font = `600 ${px}px ${FONT}`;
+  g.textAlign = "center"; g.textBaseline = "middle";
+  for (const k of ids) {
+    const t = tiles[k];
+    if (t[6] !== 9 || !t[14] || !t[14].text) continue;
+    const r = T.rt[k], cx = (r[0] + r[2]) / 2 * s + ox, cy = (r[1] + r[3]) / 2 * s + oy;
+    const lines = wrapText(g, t[14].text, maxW, 4);
+    const w = Math.max(...lines.map((l) => g.measureText(l).width)) + 10, h = lines.length * lh + 6;
+    g.fillStyle = "rgba(12,13,16,.88)"; g.strokeStyle = "#8a7a4a"; g.lineWidth = 1;
+    g.fillRect(cx - w / 2, cy - h / 2, w, h); g.strokeRect(cx - w / 2 + .5, cy - h / 2 + .5, w - 1, h - 1);
+    g.fillStyle = "#f3e3b0";
+    lines.forEach((l, i) => g.fillText(l, cx, cy - h / 2 + 3 + lh * (i + 0.5)));
   }
 }
 function drawGuesses(g, s, ox, oy) {

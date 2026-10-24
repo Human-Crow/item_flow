@@ -79,11 +79,18 @@ const sortedKeys = (m) => [...m.keys()].sort((a, b) => a - b);
 const s = (n, w) => `${n} ${w}${n !== 1 ? "s" : ""}`;
 
 // ---------------------------------------------------------------- state
-const S = { base: [], name: "", graph: null, res: null, wanted: [], flows: new Map(), guesses: [], guessOn: false, guessSet: new Map() };
+const S = { signs: new Map(), base: [], name: "", graph: null, res: null, wanted: [], flows: new Map(), guesses: [], guessOn: false, guessSet: new Map() };
 
 /** a blueprint read by the worker (the SaveFile from downloadAndRead / readBlp) */
 export function loadSave(save, name = "") {
   S.base = buildingsFromSave(save);
+  // text of writable signs (the SaveFile's text: one string per building, "" = none)
+  S.signs = new Map();
+  const bs = save && save.buildings, texts = bs && bs.text;
+  if (texts) for (let i = 0; i < bs.count; i++) {
+    const t = texts[i];
+    if (t && bs.id[i] === B.Writable_Sign && String(t).trim()) S.signs.set(pk(bs.x[i], bs.y[i]), String(t));
+  }
   S.name = (save && save.name) || name;
   S.graph = S.res = null;
   S.guesses = S.base.length ? guessInOut(S.base.map(copyBuilding)) : [];
@@ -152,6 +159,7 @@ function blockDetails(p, b) {
   const hasOutput = (FACTORIES.has(b.id) && b.recipe) || (PRODUCERS.has(b.id) && !NO_BELT_OUTPUT.has(b.id)) || b.id === B.Earth_Teleporter;
   if (hasOutput) { const o = outputTile(b); d.out = [px(o), py(o), dx, dy]; }
   d.name = SHORT_NAMES[b.id] ?? idLabel(b).replaceAll("_", " ");
+  if (b.id === B.Writable_Sign && S.signs.has(p)) { d.text = S.signs.get(p); d.name = ""; }
   if (FACTORIES.has(b.id)) d.sub = b.recipe ? recipeLabel(b).replaceAll("_", " ") : "no recipe";
   else if (PRODUCERS.has(b.id)) { d.sub = itemName(b.filter).replaceAll("_", " "); d.prod = itemColor(b.filter); }
   else if (END_POINTS.has(b.id) && b.filter) d.sub = "takes " + itemName(b.filter).replaceAll("_", " ");
@@ -347,6 +355,7 @@ export function tileInfo(x, y) {
   const b = graph.grid.get(anchor);
   const p = anchor;
   const lines = [`${P(p)}  ${idLabel(b)}`, `facing ${oLabel(b)}` + (b.tier ? `, tier ${b.tier}` : "")];
+  if (b.id === B.Writable_Sign) lines.push(S.signs.has(p) ? "text: " + S.signs.get(p) : "no text");
   const rec = graph.recipe.get(p);
   if (FACTORIES.has(b.id)) lines.push("recipe: " + (b.recipe ? recipeLabel(b) : "none (takes nothing)"));
   if (rec && (FACTORIES.has(b.id) || b.id === B.Earth_Teleporter)) {
