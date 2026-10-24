@@ -9,7 +9,7 @@ const store = {
 };
 const BG = "#141519", GRIDC = "#22242a", NUMBER_BOX = "#0e0f12", TUNNEL = "#05080b", DOT_OUTLINE = "#0b0c0f";
 const IN_COLOR = "#4cd07d", OUT_COLOR = "#4ca8f0";
-const LINE_MAX_WIDTH = 0.16, DOT_SIZE = 0.13, DOT_SPEED = 1.2, MAX_DOTS = 450;
+const LINE_MAX_WIDTH = 0.16, DOT_SIZE = 0.13, DOT_SPEED = 1.2, MAX_DOTS = 3000;
 const MIN_DETAIL = 22, MIN_NUMBER = 28, MIN_DOT = 10, MIN_FONT = 7;
 const LEGEND_TILES = [["#2c2f37", "#7c808b", "Belt"], ["#3b2a52", "#b59be3", "Splitter"], ["#15384d", "#6db8e0", "UG in"],
   ["#14452f", "#6fdba6", "UG out"], ["#4a3618", "#ffcf7a", "Arm"], ["#3a3b40", "#d0d2d8", "Storage"],
@@ -616,7 +616,7 @@ function renderStatic() {
   staticOk = true;
 }
 
-// moving dots
+// moving dots: every visible belt gets at least one (busiest first), busy belts get extra ones
 let dots = [];
 function buildDots() {
   dots = [];
@@ -625,17 +625,26 @@ function buildDots() {
   const cand = [];
   for (const k of inView(T.lchunks, vr[0], vr[1], vr[2], vr[3])) {
     const l = T.links[k];
-    for (const [i, v] of l[7]) cand.push([l, i, v]);
+    for (const [i, v] of l[7]) if (v > 1e-9) cand.push([l, i, v]);
   }
   if (!cand.length) return;
   cand.sort((a, b) => b[2] - a[2]);
   const per = Math.max(1, Math.min(4, Math.floor(MAX_DOTS / cand.length)));
-  for (const [l, i, v] of cand) {
-    const n = Math.max(1, Math.min(per, Math.round(per * v / view.max_flow)));
+  const count = new Array(cand.length).fill(0);
+  let left = MAX_DOTS;
+  for (let j = 0; j < cand.length && left > 0; j++) { count[j] = 1; left--; }       // one each first
+  for (let j = 0; j < cand.length && left > 0; j++) {                               // then the extras
+    const want = Math.max(1, Math.min(per, Math.round(per * cand[j][2] / view.max_flow)));
+    const extra = Math.min(want - count[j], left);
+    count[j] += extra; left -= extra;
+  }
+  cand.forEach(([l, i], j) => {
+    const n = count[j];
     const col = (view.items[i] || ["", "#ccc"])[1];
     const ph = ((l[0] * 7.13 + l[1] * 3.71 + l[2] * 1.97 + l[3] * 5.3 + i * 0.618) % 1 + 1) % 1;
-    for (let k = 0; k < n && dots.length < MAX_DOTS; k++) dots.push([l, col, ph + k / n]);
-  }
+    for (let k = 0; k < n; k++) dots.push([l, col, ph + k / n]);
+  });
+  dots.sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));    // grouped by colour: one path per colour
 }
 const t0 = performance.now();
 function frame() {
@@ -650,11 +659,16 @@ function frame() {
   if (dots.length && S.anim) {
     const t = (performance.now() - t0) / 1000 * DOT_SPEED, rr = Math.min(7, Math.max(2.5, s * DOT_SIZE));
     ctx.lineWidth = rr < 5 ? 1 : 1.5; ctx.strokeStyle = DOT_OUTLINE;
+    let cur = null;
+    const flush = () => { if (cur !== null) { ctx.fill(); ctx.stroke(); } };
     for (const [l, col, ph] of dots) {
+      if (col !== cur) { flush(); cur = col; ctx.fillStyle = col; ctx.beginPath(); }
       const f = ((ph + t / l[4]) % 1 + 1) % 1;
       const x = (l[0] + (l[2] - l[0]) * f) * s + camera.ox, y = (l[1] + (l[3] - l[1]) * f) * s + camera.oy;
-      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, rr, 0, 7); ctx.fill(); ctx.stroke();
+      if (x < -10 || y < -10 || x > CW + 10 || y > CHH + 10) continue;
+      ctx.moveTo(x + rr, y); ctx.arc(x, y, rr, 0, 7);
     }
+    flush();
   }
   if (selected && view) {
     const r = rrect(selected[2], selected[3], selected[4], selected[5]);
@@ -825,4 +839,4 @@ startWorker().then(async () => {
   $("bp").value = id || store.get("last", "");
   if (id) await loadFromServer();
 }).catch((e) => setStatus("could not start the calculator: " + (e.message || e), "error"));
-window.__flow = { openSave, recalc, runTest, tap, zoomAt, get view() { return view; }, camera, fitView, call };
+window.__flow = { get dots() { return dots.length; }, openSave, recalc, runTest, tap, zoomAt, get view() { return view; }, camera, fitView, call };
