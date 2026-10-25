@@ -280,7 +280,19 @@ function fmt(v, d = 4) {
   return s === "-0" || s === "" ? "0" : s;
 }
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const sw = (c) => `<span class="sw" style="background:${c}"></span>`;
+// very dark item colours (Coal) get a light edge everywhere: dots, lines, swatches
+const LIGHT_EDGE = "#a4a8b2", LINE_EDGE = "#7d818b", THIN_DARK = "#5f636d";
+const darkCache = new Map();
+function isDark(c) {
+  let d = darkCache.get(c);
+  if (d === undefined) {
+    const n = parseInt(String(c).slice(1, 7), 16);
+    d = !Number.isNaN(n) && (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 < 0.3;
+    darkCache.set(c, d);
+  }
+  return d;
+}
+const sw = (c) => `<span class="sw" style="background:${c}${isDark(c) ? ";border-color:" + LIGHT_EDGE : ""}"></span>`;
 let totalsMode = "item";
 function fillSide() {
   const s = view.side;
@@ -310,7 +322,7 @@ function fillSide() {
   const [sum, sc] = s.prob_summary, [lines, lc] = s.problems;
   $("probSum").textContent = sum || (lines.length ? "no jams — notes below" : "");
   $("probSum").style.color = sc;
-  $("probs").innerHTML = lines.map(l => `<div style="color:${/^(Why|Where items wait)/.test(l) ? "#ddd" : lc}">${esc(l) || "&nbsp;"}</div>`).join("");
+  $("probs").innerHTML = lines.map(l => `<div style="color:${/^(Why|Where items wait|Not connected)/.test(l) ? "#ddd" : lc}">${esc(l) || "&nbsp;"}</div>`).join("");
   $("probBadge").textContent = s.n_problems ? (s.n_problems > 99 ? "99+" : s.n_problems) : "";
   // legend
   $("legend").innerHTML = LEGEND_TILES.map(([f, a, n]) => `<span><i class="lg" style="background:${f};border-color:${a}"></i>${n}</span>`).join("");
@@ -459,12 +471,25 @@ function drawStatic(g, s, ox, oy, vr, atlasMode = false) {
   const mf = v.max_flow;
   const lids = inView(T.lchunks, vr[0] - 1, vr[1] - 1, vr[2] + 1, vr[3] + 1);
   g.lineCap = "butt";
-  for (const k of lids) {
-    const l = T.links[k];
-    const w = Math.max(atlasMode ? 1 : 2, LINE_MAX_WIDTH * l[8] / mf * s);
-    g.strokeStyle = pal[l[6]]; g.lineWidth = w;
+  const darkLines = [];
+  const lineW = (l) => Math.max(atlasMode ? 1 : 2, LINE_MAX_WIDTH * l[8] / mf * s);
+  const stroke = (l, col, w) => {
+    g.strokeStyle = col; g.lineWidth = w;
     g.setLineDash(l[5] ? [Math.max(2, s / 6), Math.max(2, s / 6)] : []);
     g.beginPath(); g.moveTo(l[0] * s + ox, l[1] * s + oy); g.lineTo(l[2] * s + ox, l[3] * s + oy); g.stroke();
+  };
+  for (const k of lids) {
+    const l = T.links[k];
+    if (isDark(pal[l[6]])) { darkLines.push(l); continue; }
+    stroke(l, pal[l[6]], lineW(l));
+  }
+  if (darkLines.length) {
+    // dark items: same width as every other line. Wide lines get a thin grey edge inside that width
+    // (all edges first, then the dark middles, so there are no seams); thin lines (zoomed out) are
+    // just drawn in a slightly lighter grey, so they don't stand out more than other items.
+    const edge = (w) => Math.max(1, Math.min(2.5, w * 0.2));
+    for (const l of darkLines) { const w = lineW(l); stroke(l, w >= 5 ? LINE_EDGE : THIN_DARK, w); }
+    for (const l of darkLines) { const w = lineW(l); if (w >= 5) stroke(l, pal[l[6]], w - 2 * edge(w)); }
   }
   g.setLineDash([]);
   // boosted plant areas
@@ -522,7 +547,7 @@ function drawDetails(g, k, s, ox, oy) {
   } else if (kind === 4) {
     arrow(g, cx - dx * s * 0.35, cy - dy * s * 0.35, cx + dx * s * 0.35, cy + dy * s * 0.35, acc, Math.max(2, s / 12), s / 5);
     const ex = t[14] || {};
-    if (ex.f) { const rr = s * 0.12; g.fillStyle = ex.f; g.strokeStyle = "#000"; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, rr, 0, 7); g.fill(); g.stroke(); }
+    if (ex.f) { const rr = s * 0.12; g.fillStyle = ex.f; g.strokeStyle = isDark(ex.f) ? LIGHT_EDGE : "#000"; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, rr, 0, 7); g.fill(); g.stroke(); }
     if (ex.boost) corner(g, x + s, y, s * 0.2, s * 0.06 + 2, ex.boost);
   } else if (kind === 9) drawBlock(g, k, s, ox, oy);
 }
@@ -572,7 +597,7 @@ function drawBlock(g, k, s, ox, oy) {
     g.fillStyle = "#c9c9c9"; g.fillText(d.sub, mx, my + 0.14 * s);
   }
   if (d.boost) corner(g, x1, y0, s * 0.16, m + 3, d.boost);
-  if (d.prod) { const rr = s * 0.1; g.fillStyle = d.prod; g.strokeStyle = "#000"; g.lineWidth = 1;
+  if (d.prod) { const rr = s * 0.1; g.fillStyle = d.prod; g.strokeStyle = isDark(d.prod) ? LIGHT_EDGE : "#000"; g.lineWidth = 1;
     g.beginPath(); g.arc(x0 + m + rr + 3, y0 + m + rr + 3, rr, 0, 7); g.fill(); g.stroke(); }
 }
 function drawNumbers(g, ids, s, ox, oy) {
@@ -734,7 +759,7 @@ function frame() {
     let cur = null;
     const flush = () => { if (cur !== null) { ctx.fill(); ctx.stroke(); } };
     for (const [l, col, ph] of dots) {
-      if (col !== cur) { flush(); cur = col; ctx.fillStyle = col; ctx.beginPath(); }
+      if (col !== cur) { flush(); cur = col; ctx.fillStyle = col; ctx.strokeStyle = isDark(col) ? LIGHT_EDGE : DOT_OUTLINE; ctx.beginPath(); }
       const f = ((ph + t / l[4]) % 1 + 1) % 1;
       const x = (l[0] + (l[2] - l[0]) * f) * s + camera.ox, y = (l[1] + (l[3] - l[1]) * f) * s + camera.oy;
       if (x < -10 || y < -10 || x > CW + 10 || y > CHH + 10) continue;

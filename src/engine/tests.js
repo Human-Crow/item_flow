@@ -1,7 +1,7 @@
 // Balancer / splitter / ratio tests (port of item_flow.test_balancer / test_splitter / test_ratio).
 import { Item, Building as B } from "../data.js";
 import { P, SINK, msum, fmtNum, seededRandom, Fraction, lcmBig } from "./util.js";
-import { settings, blueprintEdges, isInput, isOutput, copyBuilding, itemName, TEST_ITEM } from "./model.js";
+import { settings, blueprintEdges, isInput, isOutput, copyBuilding, itemName, TEST_ITEM, ANY_ITEM } from "./model.js";
 import { buildAndSolve } from "./graph.js";
 
 export const BAL_RANDOM_RUNS = 6;
@@ -42,7 +42,7 @@ class TestBench {
     this.n = this.ins.length; this.m = this.outs.length;
     this.speed = settings.BELT_SPEED ? Number(settings.BELT_SPEED) : BAL_SPEED;
     const insSet = new Set(this.ins);
-    const first = base.find((b) => insSet.has(b.pos) && b.filter)?.filter || Item.Iron_Ore;
+    const first = base.find((b) => insSet.has(b.pos) && b.filter)?.filter || ANY_ITEM;
     this.same = new Map(this.ins.map((p) => [p, first]));
     this.total = runs; this.done = 0; this.progress = progress;
     this.graph = null;

@@ -16,8 +16,9 @@ export const ARM_SECONDS = 4.0;
 export const ARM_TIER_FACTORS = { 1: 1, 2: 2, 3: 4, 4: 6 };      // -> 15, 30, 60, 90 per minute
 export const ARM_SPEED = { 1: null, 2: null, 3: null, 4: null }; // fixed speed per tier (overrides)
 export const SPLITTER_ACCEPTS_SIDES = false;
-export const DEFAULT_ITEM = Item.Iron_Ore;
-export const EXTRACTOR_ITEM = Item.Iron_Ore;
+export const ANY_ITEM = 999_999;           // imaginary item "Default" for inputs / extractors when nothing says which item it is
+export const DEFAULT_ITEM = ANY_ITEM;
+export const EXTRACTOR_ITEM = ANY_ITEM;
 export const EXTRACTOR_ITEMS = new Set([Item.Iron_Ore, Item.Copper_Ore, Item.Stone, Item.Coal, Item.Wood_Log, Item.Wolframite]);
 export const TIER_FACTORS = { 1: [1, 1], 2: [1.5, 2], 3: [2, 4], 4: [3, 8], 5: [4, 10] };   // [normal, Gen 2 extractor]
 export const TIERED = new Set([B.Forge, B.Furnace, B.Industrial_Factory, B.Machine_Shop, B.Manufacturer, B.Workshop, B.Extractor]);
@@ -58,6 +59,7 @@ export const TEST_ITEM = 1_000_000;      // balancer test: imaginary items I1, I
 export function itemName(i) {
   if (i === 0) return "any";
   if (i > TEST_ITEM) return `I${i - TEST_ITEM}`;
+  if (i === ANY_ITEM) return "Default";
   return ITEM_NAME[i] ?? String(i);
 }
 export const buildingName = (id) => BUILDING_NAME[id] ?? String(id);

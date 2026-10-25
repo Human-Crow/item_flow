@@ -3,7 +3,7 @@
 import { Building as B, Item } from "../data.js";
 import { pk, px, py, P, SINK, INF, fmtNum, pyFixed, msum } from "./util.js";
 import {
-  settings, FACTORIES, END_POINTS, PRODUCERS, LOGISTICS, SIDE_INPUTS, NO_BELT_OUTPUT, BELT_LIKE,
+  ANY_ITEM, settings, FACTORIES, END_POINTS, PRODUCERS, LOGISTICS, SIDE_INPUTS, NO_BELT_OUTPUT, BELT_LIKE,
   COAL_FUEL_PER_MIN, NUCLEAR_FUEL_PER_MIN, itemName, idLabel, oLabel, recipeLabel, buildingsFromSave,
   copyBuilding, footprint, backRow, beltInputs, outputTile, plantArea, altUsage, altBuildings, blueprintEdges,
   isInput, guessInOut,
@@ -39,6 +39,7 @@ const ITEM_COLORS = {
   [Item.Iron_Ore]: "#8fa3b8", [Item.Iron_Ingot]: "#b9c7d6", [Item.Iron_Gear]: "#d9e2ec",
   [Item.Stone]: "#9a9a9a", [Item.Sand]: "#e3d18a", [Item.Glass]: "#9ee7f0",
   [Item.Coal]: "#3c3c3c", [Item.Wolframite]: "#7b5ea7", [Item.Uranium_Ore]: "#7fe05a",
+  [ANY_ITEM]: "#9af0cf",       // imaginary "Default" item (nothing says which item it is)
 };
 const RAW_ORDER = ["Wood_Log", "Stone", "Iron_Ore", "Copper_Ore", "Coal", "Wolframite", "Uranium_Ore"];
 const MAX_PROBLEM_LINES = 300;
@@ -137,6 +138,11 @@ export function solve(st) {
 }
 
 // ---------------------------------------------------------------- drawing data and lists
+/** a producer (extractor, ...) that nothing takes from: no belt in front, no arm behind */
+function loose(p) {
+  const g = S.graph;
+  return PRODUCERS.has(g.grid.get(p).id) && !(g.push.get(p) || []).length && !(g.pulls.get(p) || []).length;
+}
 const short = (p) => { const b = S.graph.grid.get(p); return SHORT_NAMES[b.id] ?? idLabel(b).replaceAll("_", " "); };
 function maxOutput(p) {
   const rec = S.graph.recipe.get(p);
@@ -173,6 +179,7 @@ function blockDetails(p, b) {
     if (sg.color) d.tcol = sg.color;
   }
   if (FACTORIES.has(b.id)) d.sub = b.recipe ? recipeLabel(b).replaceAll("_", " ") : "no recipe";
+  else if (PRODUCERS.has(b.id) && loose(p)) d.sub = "not connected";
   else if (PRODUCERS.has(b.id)) { d.sub = itemName(b.filter).replaceAll("_", " "); d.prod = itemColor(b.filter); }
   else if (END_POINTS.has(b.id) && b.filter) d.sub = "takes " + itemName(b.filter).replaceAll("_", " ");
   const sh = S.res.boosts.get(p);
@@ -258,6 +265,7 @@ function side() {
   });
   const kinds = new Map();
   for (const pos of res.sources.keys()) {
+    if (loose(pos)) continue;           // not connected: makes nothing, not listed
     const b = grid.get(pos), k = `${b.id},${b.filter}`;
     if (!kinds.has(k)) kinds.set(k, [b.id, b.filter, []]);
     kinds.get(k)[2].push(pos);
@@ -336,6 +344,11 @@ function side() {
   if (res.limits.length) probs = ["Why the output isn't higher:", ...res.limits, ...(probs.length ? [""] : []), ...probs];
   if (info.length) probs.push(...(probs.length ? [""] : []),
     `Where items wait (${info.length}; more arrives than gets used, the belts before it fill up):`, ...info);
+  // producers that nothing takes from (a note: not counted as a problem)
+  const looseOnes = [...grid.keys()].filter((p) => PRODUCERS.has(grid.get(p).id) && loose(p)).sort((a, b) => a - b);
+  if (looseOnes.length) probs.push(...(probs.length ? [""] : []),
+    `Not connected (${looseOnes.length}; no belt in front and no arm taking from it, so it makes nothing):`,
+    ...looseOnes.map((p) => `${P(p)} ${short(p)}`));
   if (probs.length > MAX_PROBLEM_LINES)
     probs = [...probs.slice(0, MAX_PROBLEM_LINES), `... and ${probs.length - MAX_PROBLEM_LINES} more (tap tiles for details)`];
   out.problems = [probs, res.jams.size || beltLimits.size || res.warnings.length || res.backed_up.size ? JAM_COLOR : "#d8c08a"];
@@ -382,7 +395,8 @@ export function tileInfo(x, y) {
     lines.push(`makes ${itemName(rec.out_item)}: ${fmtNum(made, 3)} / min (max ${fmtNum(crafts * rec.out_amount, 3)})`);
     lines.push("uses / min: " + [...rec.mats].map(([i, a]) => `${itemName(i)} ${fmtNum(done * a, 3)}`).join(", "));
   }
-  if (PRODUCERS.has(b.id)) {
+  if (PRODUCERS.has(b.id) && loose(p)) lines.push("not connected: nothing takes from it, so it makes nothing");
+  else if (PRODUCERS.has(b.id)) {
     const made = msum(res.made.get(p) || new Map());
     lines.push(`makes ${itemName(b.filter)}: ${fmtNum(made, 3)} / min (max ${fmtNum(maxOutput(p), 3)})` + (NO_BELT_OUTPUT.has(b.id) ? " (arms only)" : ""));
   }

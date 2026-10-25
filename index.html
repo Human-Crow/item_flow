@@ -113,7 +113,7 @@
           <summary>Item filters on arms</summary>
           <ul>
             <li><b>Input arm with a filter</b>: that item comes in.</li>
-            <li><b>Input arm without a filter</b> (“any”): the site picks the item the buildings after it need, shown as <b>(auto)</b> in the Inputs list. With nothing to go by, it uses Iron Ore. Set a filter in the game when you want a specific item.</li>
+            <li><b>Input arm without a filter</b> (“any”): the site picks the item the buildings after it need, shown as <b>(auto)</b> in the Inputs list. When nothing after it needs a specific item (e.g. a balancer that only leads to outputs), it uses the imaginary item <b>Default</b> <span class="sw" style="background:#9af0cf"></span>: which item it is doesn't change the result. Set a filter in the game when you want a specific item.</li>
             <li><b>Output arms</b> take every item; their filter doesn't matter.</li>
             <li><b>Normal arms</b> (not on the edge) with a filter only move that item; without a filter they move anything.</li>
           </ul>
@@ -128,7 +128,7 @@
             <li><b>Arms</b> pick up from the tile behind them (belt, storage, factory, extractor) and drop on the tile in front. Speed per minute by tier: 15 / 30 / 60 / 90 (faster when boosted by a power plant).</li>
             <li><b>Storage</b> works like a belt tile: in at the back, out at the front.</li>
             <li><b>Factories</b> (Workshop, Furnace, Machine Shop, Forge, Industrial, Manufacturer) use their recipe and tier. Belts feed them on the back row; the output comes out of the middle of the front. A factory without a recipe takes nothing. <b>One belt into a factory can carry only one item type</b>: a mixed belt stops.</li>
-            <li><b>Extractors</b> make ore (their item is picked from what is needed), the <b>Uranium Extractor</b> makes Uranium Ore, the <b>Gem Tree</b> makes Gem Apples (arms only).</li>
+            <li><b>Extractors</b> make the ore that the buildings after them need, or <b>Default</b> when nothing needs a specific ore. An extractor that nothing takes from is “not connected” and makes nothing. The <b>Uranium Extractor</b> makes Uranium Ore, the <b>Gem Tree</b> makes Gem Apples (arms only).</li>
             <li>The <b>Earth Teleporter</b> turns Matter Duplicators into Earth Tokens; belts feed it in the middle of the back.</li>
             <li><b>End points</b> where items are used up: Gold Vault and Research Lab (belt input in the middle of each side), Coal Power Plant (Coal) and Nuclear Power Plant (Nuclear Fuel Cells), each with one belt input tile on the back.</li>
             <li><b>Power plants</b> with enough fuel (Coal 10/min, Nuclear 0.5/min) speed up factories and arms in their square: ×1.2 for coal, ×1.4 for nuclear (×1.6 on World gen 2). Boosted buildings get a coloured corner.</li>
@@ -166,7 +166,7 @@
           <ul>
             <li><b>Inputs</b>: one row per input arm with its item and amount. A red <b>→X</b> means only X of it actually gets in (the rest backs up). Producers (extractors, …) are listed too, with what they can make.</li>
             <li><b>Totals</b>: everything that goes in, comes out and is made in between, <b>per item</b> or <b>per output</b>. <b>Alt recipes</b> shows how much of each item is made with the alt recipe (1 = all, 0 = none); underlined = all buildings are set the same way.</li>
-            <li><b>Problems</b>: jams, mixed belts, belts at max speed that limit the output, items left over, warnings (e.g. an underground belt without an exit). <b>Why the output isn't higher</b> says what to change to get more. <b>Where items wait</b> lists the places where belts fill up, and why.</li>
+            <li><b>Problems</b>: jams, mixed belts, belts at max speed that limit the output, items left over, warnings (e.g. an underground belt without an exit). <b>Why the output isn't higher</b> says what to change to get more. <b>Where items wait</b> lists the places where belts fill up, and why. <b>Not connected</b> lists extractors (and gem trees) that nothing takes from, so they make nothing; this is only a note, not a problem.</li>
             <li>When loops or splitters keep changing, the numbers are long-run averages; Problems says so.</li>
           </ul>
         </details>
