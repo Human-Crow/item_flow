@@ -34,6 +34,7 @@
       <button id="turnBtn" title="turn 90°">⟳</button>
     </div>
     <div id="card"><button class="x" id="cardX">×</button><pre id="cardText"></pre><div class="row" id="cardRow"></div></div>
+    <div id="coord"></div>
   </div>
   <div id="panel">
     <div id="grip"></div>
@@ -77,20 +78,140 @@
       <label class="check"><input type="checkbox" id="sGuess"> guess in/out belts on the edge</label>
       <label class="check"><input type="checkbox" id="sAnim" checked> moving dots</label>
       <label class="check"><input type="checkbox" id="sNum" checked> numbers on tiles</label>
-      <h3>Legend</h3>
-      <div class="legend" id="legend"></div>
-      <div class="legend" id="legendItems" style="margin-top:10px; grid-template-columns: repeat(2, 1fr)"></div>
-      <h3>How to use</h3>
-      <div class="help">
-        <b>Drag</b> to move, <b>pinch</b> to zoom, <b>double-tap</b> to zoom in. <b>Tap</b> a tile for its details.<br>
-        Change input amounts under Inputs, then <b>Calculate</b> (or ▶ on the map).
-        A red <b>→X</b> next to an input means only X of it actually goes in.<br>
-        <b>Guess in/out belts</b>: pretend marker arms on edge belts where items seem to come in or go out.
-        Tap one (or its belt) and use the button on its card to switch it off; dashed outlines are possible
-        ones that are switched off — tap them to switch them on.<br>
-        Outlines: <span style="color:#4cd07d">input</span>, <span style="color:#4ca8f0">output</span>,
-        <span style="color:#ffb347">at max speed</span>, <span style="color:#ff5fd2">limits the output</span>,
-        <span style="color:#8a6a3a">items wait</span>, <span style="color:#ff4d4d">jam</span>.
+      <div class="help small">Settings are saved in this browser. What each one does: see <b>Settings explained</b> below.</div>
+
+      <h3>Help</h3>
+      <div class="faq">
+        <details open>
+          <summary>Quick start</summary>
+          <ol>
+            <li>Type a blueprint id (like <code>f7023m</code>) or paste a blueprint link at the top and press <b>Load</b>. Or press <b>File</b> to open a <code>.blp</code> file.</li>
+            <li>Under <b>Inputs</b>, type how much goes into each input (items per minute), or type one number in “all inputs” and press <b>Set all</b>. Inputs start at 0.</li>
+            <li>Press <b>Calculate</b> (or ▶ on the map).</li>
+            <li>Look at the map, <b>Totals</b> and <b>Problems</b>. Tap any tile for its details.</li>
+          </ol>
+          <p>All amounts on this site are <b>items per minute</b>.</p>
+        </details>
+
+        <details>
+          <summary>Inputs and outputs: arms on the edge</summary>
+          <p>The site needs to know where items come in and where they leave. You mark that in the blueprint itself with <b>robotic arms on the outer edge</b>:</p>
+          <ul>
+            <li>The <b>edge</b> is the outermost row or column of the whole blueprint (the smallest rectangle around all buildings). An arm one tile further in is a normal arm.</li>
+            <li>An arm on the edge that points <b>into</b> the blueprint is an <span class="c-in">input</span>: items appear there, and it drops them on the tile in front of it.</li>
+            <li>An arm on the edge that points <b>out of</b> the blueprint is an <span class="c-out">output</span>: everything it picks up leaves the blueprint.</li>
+            <li>An arm on the edge that points <b>along</b> the edge is a normal arm.</li>
+            <li>Input and output arms are only markers: they have <b>no speed limit</b>, whatever their tier.</li>
+            <li>Inputs and outputs can <b>only</b> be on the edge. To feed something in the middle of the blueprint, run a belt to the edge and put the arm there.</li>
+          </ul>
+          <p>The bar on the map shows the count, e.g. “4 inputs → 4 outputs”. No arms on the edge? Turn on <b>Guess in/out belts</b> (see below).</p>
+        </details>
+
+        <details>
+          <summary>Item filters on arms</summary>
+          <ul>
+            <li><b>Input arm with a filter</b>: that item comes in.</li>
+            <li><b>Input arm without a filter</b> (“any”): the site picks the item the buildings after it need, shown as <b>(auto)</b> in the Inputs list. With nothing to go by, it uses Iron Ore. Set a filter in the game when you want a specific item.</li>
+            <li><b>Output arms</b> take every item; their filter doesn't matter.</li>
+            <li><b>Normal arms</b> (not on the edge) with a filter only move that item; without a filter they move anything.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>What the site understands</summary>
+          <ul>
+            <li><b>Belts</b> take items from the back and both sides, and pass them forward.</li>
+            <li><b>Splitters</b> take from the back only and share evenly over front, left and right; when one way is full the rest goes the other ways.</li>
+            <li><b>Underground belts</b> connect to the next exit facing the same way, up to the <b>UG distance</b> setting (tiles in between).</li>
+            <li><b>Arms</b> pick up from the tile behind them (belt, storage, factory, extractor) and drop on the tile in front. Speed per minute by tier: 15 / 30 / 60 / 90 (faster when boosted by a power plant).</li>
+            <li><b>Storage</b> works like a belt tile: in at the back, out at the front.</li>
+            <li><b>Factories</b> (Workshop, Furnace, Machine Shop, Forge, Industrial, Manufacturer) use their recipe and tier. Belts feed them on the back row; the output comes out of the middle of the front. A factory without a recipe takes nothing. <b>One belt into a factory can carry only one item type</b>: a mixed belt stops.</li>
+            <li><b>Extractors</b> make ore (their item is picked from what is needed), the <b>Uranium Extractor</b> makes Uranium Ore, the <b>Gem Tree</b> makes Gem Apples (arms only).</li>
+            <li>The <b>Earth Teleporter</b> turns Matter Duplicators into Earth Tokens; belts feed it in the middle of the back.</li>
+            <li><b>End points</b> where items are used up: Gold Vault and Research Lab (belt input in the middle of each side), Coal Power Plant (Coal) and Nuclear Power Plant (Nuclear Fuel Cells), each with one belt input tile on the back.</li>
+            <li><b>Power plants</b> with enough fuel (Coal 10/min, Nuclear 0.5/min) speed up factories and arms in their square: ×1.2 for coal, ×1.4 for nuclear (×1.6 on World gen 2). Boosted buildings get a coloured corner.</li>
+            <li><b>Signs</b> show their text on the map.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>Reading the map</summary>
+          <ul>
+            <li><b>Drag</b> to move, <b>pinch</b> (or mouse wheel) to zoom, <b>double-tap</b> to zoom in. <b>Fit</b> shows the whole blueprint, <b>⟳</b> turns the view 90°.</li>
+            <li><b>Tap</b> a tile for its details: what goes through, recipe and speeds, why it is limited. Tap ✕ to close.</li>
+            <li><b>Lines</b> show where items go; thicker = more. Dashed lines are underground. <b>Moving dots</b> show the items, coloured per item.</li>
+            <li><b>Numbers</b> on tiles: items per minute through that tile (or made, for a factory). Zoom in to see them.</li>
+            <li>The box at the top left shows the total in → out and the number of inputs and outputs.</li>
+            <li>The box at the bottom left shows the coordinate (x, y) of the tile in the middle of the map, marked with a small +, and what is there. With a mouse it shows the tile under the pointer. The same coordinates are used everywhere on the site, e.g. in Problems and the tile details.</li>
+          </ul>
+          <p>Outlines:</p>
+          <ul class="keys">
+            <li><i style="border-color:#4cd07d"></i>input</li>
+            <li><i style="border-color:#4ca8f0"></i>output</li>
+            <li><i style="border-color:#ffb347"></i>at max speed (belt full, arm or factory at its limit)</li>
+            <li><i style="border-color:#ff5fd2"></i>limits the output: making this faster gives more output</li>
+            <li><i style="border-color:#8a6a3a"></i>items wait here: more arrives than can move on</li>
+            <li><i style="border-color:#ff4d4d"></i>jam: an item arrives that nothing after it can use</li>
+          </ul>
+          <p>Tiles:</p>
+          <div class="legend" id="legend"></div>
+          <p>Items in this blueprint:</p>
+          <div class="legend" id="legendItems" style="grid-template-columns: repeat(2, 1fr)"></div>
+        </details>
+
+        <details>
+          <summary>Inputs, Totals and Problems</summary>
+          <ul>
+            <li><b>Inputs</b>: one row per input arm with its item and amount. A red <b>→X</b> means only X of it actually gets in (the rest backs up). Producers (extractors, …) are listed too, with what they can make.</li>
+            <li><b>Totals</b>: everything that goes in, comes out and is made in between, <b>per item</b> or <b>per output</b>. <b>Alt recipes</b> shows how much of each item is made with the alt recipe (1 = all, 0 = none); underlined = all buildings are set the same way.</li>
+            <li><b>Problems</b>: jams, mixed belts, belts at max speed that limit the output, items left over, warnings (e.g. an underground belt without an exit). <b>Why the output isn't higher</b> says what to change to get more. <b>Where items wait</b> lists the places where belts fill up, and why.</li>
+            <li>When loops or splitters keep changing, the numbers are long-run averages; Problems says so.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>Balancer, splitter and ratio tests</summary>
+          <p>Under <b>Tests</b>. They need input arms on one edge and output arms on the other (or guessed ones). During a test, arm speed is ignored, and the output belts are assumed to never block.</p>
+          <ul>
+            <li><b>Balancer</b>: every input must be shared equally over every output. Three checks: <i>split per input</i> (each input gets its own imaginary item I1, I2, … and every output must get the same part of each), <i>random amounts</i>, and <i>full belt speed</i>: belt speed × min(inputs, outputs) in total, with no jams.</li>
+            <li><b>Splitter</b>: the inputs are equal; it must carry belt speed × min(inputs, outputs) and share it equally.</li>
+            <li><b>Ratio</b>: shows the part of the total each output gets, as fractions on one denominator (e.g. 1/6, 1/6, 2/6, 2/6 = ratio 1 : 1 : 2 : 2), exact also for big fractions like 471/1159. Outputs that get the same part are added up as extra info. Then a check with <i>uneven inputs</i> (a note only: many ratio splitters need equal inputs) and a <i>full belt speed</i> check without clogging.</li>
+            <li>Lines starting with <b>!</b> show what went wrong. <b>Show</b> puts the amounts of that run in the Inputs, so you can see it on the map.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>Guess in/out belts</summary>
+          <p>For blueprints without marker arms. When turned on (Settings above), the site pretends there are marker arms on belts that run into or out of the edge.</p>
+          <ul>
+            <li>Likely ones are switched on; possible ones that are switched off show as a dashed square with <b>+</b>.</li>
+            <li>Tap a guessed marker (or its belt) and use the button on its card to switch it off or on.</li>
+            <li>The tests use the guessed markers that are switched on.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>Settings explained</summary>
+          <ul>
+            <li><b>Belt speed</b>: the most one belt tile can carry per minute (480 by default). Leave empty for no limit.</li>
+            <li><b>UG distance</b>: how many tiles an underground belt can go under (4 base, 5 or 6 with research).</li>
+            <li><b>World gen</b>: Gen 2 worlds have faster extractors (and a stronger nuclear boost).</li>
+            <li><b>Arm speed by tier</b>: off = arms move any amount, to see what the belts alone can do.</li>
+            <li><b>Moving dots</b> and <b>numbers on tiles</b>: only change the picture. Turn off the dots if the map feels slow.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>Tips and questions</summary>
+          <ul>
+            <li><b>Everything is 0?</b> Inputs start at 0: set amounts under Inputs and press Calculate.</li>
+            <li><b>“0 inputs”?</b> There are no arms on the edge pointing in. Add marker arms in the game, or turn on Guess in/out belts.</li>
+            <li><b>An arm isn't seen as input/output?</b> It has to be exactly on the outermost row/column of the blueprint, pointing straight in or out. A building sticking out further moves the edge.</li>
+            <li><b>Share a result</b>: after loading, the page address ends with <code>?id=…</code>; send that link and it opens the same blueprint.</li>
+            <li><b>Slow?</b> Very big blueprints can take a while. <b>Stop</b> next to the status line cancels a calculation.</li>
+            <li>Blueprints are downloaded and read by the Cloudflare server; all calculations run in your own browser.</li>
+          </ul>
+        </details>
       </div>
     </div>
   </div>

@@ -155,9 +155,12 @@ async function openSave(save, name) {
   const b = save && save.buildings;
   // only what the calculation needs (typed arrays are copied to the background worker as they are)
   // sign texts: only the ones that are set (the full list has a string for every building)
-  let text = null;
-  if (b && b.text) { text = {}; for (let i = 0; i < b.count; i++) if (b.text[i]) text[i] = b.text[i]; }
-  const slim = { name: save && save.name || "", buildings: b ? { count: b.count, id: b.id, x: b.x, y: b.y, o: b.o, tier: b.tier, rec_fil: b.rec_fil, text } : null };
+  let text = null, color = null;
+  if (b && b.text) {
+    text = {}; color = {};
+    for (let i = 0; i < b.count; i++) if (b.text[i]) { text[i] = b.text[i]; if (b.color) color[i] = b.color[i]; }
+  }
+  const slim = { name: save && save.name || "", buildings: b ? { count: b.count, id: b.id, x: b.x, y: b.y, o: b.o, tier: b.tier, rec_fil: b.rec_fil, text, color } : null };
   const info = await call("load", { save: slim, name });
   lastSave = slim; lastName = info.name || name;
   T = null; dots = []; dirty(true);
@@ -624,9 +627,13 @@ function drawSigns(g, ids, s, ox, oy) {
     const r = T.rt[k], cx = (r[0] + r[2]) / 2 * s + ox, cy = (r[1] + r[3]) / 2 * s + oy;
     const lines = wrapText(g, t[14].text, maxW, 4);
     const w = Math.max(...lines.map((l) => g.measureText(l).width)) + 10, h = lines.length * lh + 6;
-    g.fillStyle = "rgba(12,13,16,.88)"; g.strokeStyle = "#8a7a4a"; g.lineWidth = 1;
+    // the sign's own text colour; dark colours get a light box so they stay readable
+    const col = t[14].tcol || "#f3e3b0";
+    const n = parseInt(col.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    const dark = lum < 0.35;
+    g.fillStyle = dark ? "rgba(226,222,212,.94)" : "rgba(12,13,16,.88)"; g.strokeStyle = dark ? "#9a9488" : "#5a5a60"; g.lineWidth = 1;
     g.fillRect(cx - w / 2, cy - h / 2, w, h); g.strokeRect(cx - w / 2 + .5, cy - h / 2 + .5, w - 1, h - 1);
-    g.fillStyle = "#f3e3b0";
+    g.fillStyle = col;
     lines.forEach((l, i) => g.fillText(l, cx, cy - h / 2 + 3 + lh * (i + 0.5)));
   }
 }
@@ -712,6 +719,7 @@ function frame() {
     }
     flush();
   }
+  drawCoord(s);
   if (selected && view) {
     const r = rrect(selected[2], selected[3], selected[4], selected[5]);
     ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
@@ -719,6 +727,41 @@ function frame() {
     ctx.setLineDash([]);
   }
 }
+
+// ================================================================ coordinate readout
+// the tile under the mouse, or (touch / no mouse) the tile in the middle of the map, with a marker
+let hoverTile = null, coordText = "";
+const KIND_NAMES = ["Belt", "Splitter", "Underground in", "Underground out", "Arm", "Storage"];
+function tileName(x, y) {
+  if (!T) return "";
+  const k = T.occ.get(x + "," + y);
+  if (k === undefined) return "";
+  const t = view.tiles[k];
+  if (t[6] === 9) return t[14] && t[14].text ? "Sign" : (t[14] && t[14].name) || "";
+  return KIND_NAMES[t[6]] || "";
+}
+function drawCoord(s) {
+  if (!view || !T) { if (coordText) { coordText = ""; $("coord").textContent = ""; } return; }
+  const centre = !hoverTile;
+  const [x, y] = hoverTile || screenToTile(CW / 2, CHH / 2);
+  const name = tileName(x, y);
+  const txt = `x ${x}, y ${y}` + (name ? `  ${name}` : "") + (centre ? "  (middle)" : "");
+  if (txt !== coordText) { coordText = txt; $("coord").textContent = txt; }
+  if (centre && s >= 4) {         // marker on the middle tile
+    const r = rrect(x, y, x + 1, y + 1);
+    const X = r[0] * s + camera.ox, Y = r[1] * s + camera.oy, w = (r[2] - r[0]) * s;
+    ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 1.5;
+    ctx.strokeRect(X + .75, Y + .75, w - 1.5, w - 1.5);
+    const cx = CW / 2, cy = CHH / 2, a = Math.max(4, Math.min(9, s * 0.25));
+    ctx.beginPath(); ctx.moveTo(cx - a, cy); ctx.lineTo(cx + a, cy); ctx.moveTo(cx, cy - a); ctx.lineTo(cx, cy + a); ctx.stroke();
+  }
+}
+canvas.addEventListener("pointermove", (e) => {
+  if (e.pointerType !== "mouse") return;
+  const t = screenToTile(e.offsetX, e.offsetY);
+  if (!hoverTile || t[0] !== hoverTile[0] || t[1] !== hoverTile[1]) { hoverTile = t; dirty(); }
+});
+canvas.addEventListener("pointerleave", () => { if (hoverTile) { hoverTile = null; dirty(); } });
 
 // ================================================================ touch / mouse
 const pointers = new Map();
@@ -876,7 +919,7 @@ resize();
 requestAnimationFrame(frame);
 startWorker().then(async () => {
   setStatus("ready — type a blueprint id or link");
-  $("loading").textContent = "Type a blueprint id or link above and press Load.";
+  $("loading").textContent = "Type a blueprint id or link above and press Load. New here? Open More for help.";
   const id = qs.get("id") || "";
   $("bp").value = id || store.get("last", "");
   if (id) await loadFromServer();

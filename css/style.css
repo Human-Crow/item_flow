@@ -116,3 +116,25 @@ h3:first-child { margin-top: 6px; }
   #grip { display: none; }
   #tabs { padding-top: 8px; }
 }
+
+/* help on the More tab */
+.help.small { font-size: 12.5px; margin-top: 4px; }
+.faq details { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 8px; background: #17191d; }
+.faq summary { cursor: pointer; padding: 11px 12px; font-weight: 600; font-size: 14.5px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::before { content: "›"; color: var(--accent); font-size: 18px; line-height: 1; width: 10px; transition: transform .15s; }
+.faq details[open] summary::before { transform: rotate(90deg); }
+.faq details > :not(summary) { margin: 0 12px 10px; color: #c4c7ce; font-size: 13.5px; line-height: 1.55; }
+.faq ul, .faq ol { padding-left: 20px; }
+.faq li { margin: 3px 0; }
+.faq b { color: var(--text); }
+.faq code { font-family: var(--mono); font-size: 12.5px; background: #0f1013; padding: 1px 5px; border-radius: 4px; }
+.faq .keys { list-style: none; padding-left: 0; }
+.faq .keys i { display: inline-block; width: 13px; height: 13px; border: 3px solid; border-radius: 3px; margin-right: 8px; vertical-align: -2px; }
+.c-in { color: var(--in); font-weight: 600; } .c-out { color: var(--out); font-weight: 600; }
+
+/* coordinate of the tile in the middle of the map (or under the mouse) */
+#coord { position: absolute; left: calc(8px + var(--safe-l)); bottom: 8px; font: 12px var(--mono); color: #d8dbe2;
+  background: rgba(20,21,25,.9); border: 1px solid var(--line); padding: 4px 8px; border-radius: 7px; pointer-events: none;
+  max-width: calc(100% - 90px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#coord:empty, #card.show ~ #coord { display: none; }

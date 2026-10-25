@@ -81,6 +81,13 @@ const s = (n, w) => `${n} ${w}${n !== 1 ? "s" : ""}`;
 // ---------------------------------------------------------------- state
 const S = { signs: new Map(), base: [], name: "", graph: null, res: null, wanted: [], flows: new Map(), guesses: [], guessOn: false, guessSet: new Map() };
 
+/** sign text colour: stored as 0xRRGGBBAA (alpha isn't used by the game) -> "#rrggbb", null = not set */
+function signColor(v) {
+  if (v === undefined || v === null) return null;
+  v = Number(v) >>> 0;
+  return "#" + (v >>> 8).toString(16).padStart(6, "0");
+}
+
 /** a blueprint read by the worker (the SaveFile from downloadAndRead / readBlp) */
 export function loadSave(save, name = "") {
   S.base = buildingsFromSave(save);
@@ -89,7 +96,8 @@ export function loadSave(save, name = "") {
   const bs = save && save.buildings, texts = bs && bs.text;
   if (texts) for (let i = 0; i < bs.count; i++) {
     const t = texts[i];
-    if (t && bs.id[i] === B.Writable_Sign && String(t).trim()) S.signs.set(pk(bs.x[i], bs.y[i]), String(t));
+    if (t && bs.id[i] === B.Writable_Sign && String(t).trim())
+      S.signs.set(pk(bs.x[i], bs.y[i]), { text: String(t), color: signColor(bs.color ? bs.color[i] : undefined) });
   }
   S.name = (save && save.name) || name;
   S.graph = S.res = null;
@@ -159,7 +167,11 @@ function blockDetails(p, b) {
   const hasOutput = (FACTORIES.has(b.id) && b.recipe) || (PRODUCERS.has(b.id) && !NO_BELT_OUTPUT.has(b.id)) || b.id === B.Earth_Teleporter;
   if (hasOutput) { const o = outputTile(b); d.out = [px(o), py(o), dx, dy]; }
   d.name = SHORT_NAMES[b.id] ?? idLabel(b).replaceAll("_", " ");
-  if (b.id === B.Writable_Sign && S.signs.has(p)) { d.text = S.signs.get(p); d.name = ""; }
+  if (b.id === B.Writable_Sign && S.signs.has(p)) {
+    const sg = S.signs.get(p);
+    d.text = sg.text; d.name = "";
+    if (sg.color) d.tcol = sg.color;
+  }
   if (FACTORIES.has(b.id)) d.sub = b.recipe ? recipeLabel(b).replaceAll("_", " ") : "no recipe";
   else if (PRODUCERS.has(b.id)) { d.sub = itemName(b.filter).replaceAll("_", " "); d.prod = itemColor(b.filter); }
   else if (END_POINTS.has(b.id) && b.filter) d.sub = "takes " + itemName(b.filter).replaceAll("_", " ");
@@ -355,7 +367,11 @@ export function tileInfo(x, y) {
   const b = graph.grid.get(anchor);
   const p = anchor;
   const lines = [`${P(p)}  ${idLabel(b)}`, `facing ${oLabel(b)}` + (b.tier ? `, tier ${b.tier}` : "")];
-  if (b.id === B.Writable_Sign) lines.push(S.signs.has(p) ? "text: " + S.signs.get(p) : "no text");
+  if (b.id === B.Writable_Sign) {
+    const sg = S.signs.get(p);
+    lines.push(sg ? "text: " + sg.text : "no text");
+    if (sg && sg.color) lines.push("text colour: " + sg.color);
+  }
   const rec = graph.recipe.get(p);
   if (FACTORIES.has(b.id)) lines.push("recipe: " + (b.recipe ? recipeLabel(b) : "none (takes nothing)"));
   if (rec && (FACTORIES.has(b.id) || b.id === B.Earth_Teleporter)) {
