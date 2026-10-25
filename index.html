@@ -70,8 +70,10 @@
     <div class="page" id="p-more">
       <h3>Settings</h3>
       <div class="settings">
-        <span>Belt speed</span><input id="sBelt" type="text" inputmode="decimal" placeholder="empty = no limit">
-        <span>UG distance</span><select id="sUg"><option>4</option><option>5</option><option selected>6</option></select>
+        <span>Belt speed</span>
+        <div class="combo"><select id="sBelt"><option>150</option><option>165</option><option>180</option><option>195</option><option>210</option><option>240</option><option>270</option><option>300</option><option>330</option><option>375</option><option>420</option><option>450</option><option>480</option><option value="">no limit</option><option value="custom">custom …</option></select><input id="sBeltC" type="text" inputmode="decimal" placeholder="per minute" hidden></div>
+        <span>UG distance</span>
+        <div class="combo"><select id="sUg"><option>4</option><option>5</option><option>6</option><option value="custom">custom …</option></select><input id="sUgC" type="text" inputmode="numeric" placeholder="tiles" hidden></div>
         <span>World gen</span><select id="sGen"><option selected>1</option><option>2</option></select>
       </div>
       <label class="check"><input type="checkbox" id="sArm" checked> arm speed by tier (15 / 30 / 60 / 90)</label>
@@ -193,8 +195,8 @@
         <details>
           <summary>Settings explained</summary>
           <ul>
-            <li><b>Belt speed</b>: the most one belt tile can carry per minute (480 by default). Leave empty for no limit.</li>
-            <li><b>UG distance</b>: how many tiles an underground belt can go under (4 base, 5 or 6 with research).</li>
+            <li><b>Belt speed</b>: the most one belt tile can carry per minute: pick your belt speed from the list (480 by default), <b>no limit</b>, or <b>custom …</b> to type any other value.</li>
+            <li><b>UG distance</b>: how many tiles an underground belt can go under (4 base, 5 or 6 with research), or <b>custom …</b> for another number.</li>
             <li><b>World gen</b>: Gen 2 worlds have faster extractors (and a stronger nuclear boost).</li>
             <li><b>Arm speed by tier</b>: off = arms move any amount, to see what the belts alone can do.</li>
             <li><b>Moving dots</b> and <b>numbers on tiles</b>: only change the picture. Turn off the dots if the map feels slow.</li>
@@ -209,7 +211,7 @@
             <li><b>An arm isn't seen as input/output?</b> It has to be exactly on the outermost row/column of the blueprint, pointing straight in or out. A building sticking out further moves the edge.</li>
             <li><b>Share a result</b>: after loading, the page address ends with <code>?id=…</code>; send that link and it opens the same blueprint.</li>
             <li><b>Slow?</b> Very big blueprints can take a while. <b>Stop</b> next to the status line cancels a calculation.</li>
-            <li>Blueprints are downloaded and read by the Cloudflare server; all calculations run in your own browser.</li>
+            <li>Blueprints are downloaded and read by the Builderment blueprint server; all calculations run in your own browser.</li>
           </ul>
         </details>
       </div>

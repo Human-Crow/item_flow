@@ -138,3 +138,9 @@ h3:first-child { margin-top: 6px; }
   background: rgba(20,21,25,.9); border: 1px solid var(--line); padding: 4px 8px; border-radius: 7px; pointer-events: none;
   max-width: calc(100% - 90px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #coord:empty, #card.show ~ #coord { display: none; }
+
+/* a dropdown with a "custom" value next to it */
+.combo { display: flex; gap: 8px; min-width: 0; }
+.combo select { flex: 1 1 60%; min-width: 0; }
+.combo input { flex: 1 1 40%; min-width: 0; text-align: right; }
+.combo input.bad { outline: 2px solid var(--bad); outline-offset: -1px; }

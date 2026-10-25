@@ -92,16 +92,39 @@ let flows = {};             // "x,y" -> amount
 let guessSet = {};          // "x,y" -> true/false (switched by the user)
 function settingsObj() {
   return ({
-    belt: S.belt.trim() === "" ? null : Number(S.belt), ug: Number(S.ug), gen: Number(S.gen), arm: S.arm, guess: S.guess,
+    belt: String(S.belt).trim() === "" ? null : Number(S.belt), ug: Number(S.ug), gen: Number(S.gen), arm: S.arm, guess: S.guess,
     guess_set: Object.entries(guessSet).map(([k, on]) => [...k.split(",").map(Number), on]),
     flows: Object.entries(flows).map(([k, v]) => [...k.split(",").map(Number), v]), default_input: 0,
   });
 }
+// dropdown with preset values and "custom …", which shows a text box for any other value
+function comboSetting(selId, inId, key, valid) {
+  const sel = $(selId), box = $(inId);
+  const presets = [...sel.options].map((o) => o.value).filter((v) => v !== "custom");
+  const show = (custom) => { box.hidden = !custom; };
+  const cur = String(S[key] ?? "");
+  if (presets.includes(cur)) { sel.value = cur; show(false); }
+  else { sel.value = "custom"; box.value = cur; show(true); }
+  const use = (v) => { S[key] = v; store.set(key, v); recalc(); };
+  sel.addEventListener("change", () => {
+    if (sel.value === "custom") { show(true); box.value = box.value || String(S[key] ?? ""); box.focus(); box.select(); return; }
+    show(false); box.classList.remove("bad"); use(sel.value);
+  });
+  const commit = () => {
+    const t = box.value.trim().replace(",", ".");
+    if (!valid(t)) { box.classList.add("bad"); return; }
+    box.classList.remove("bad");
+    if (presets.includes(t)) { sel.value = t; show(false); }
+    if (t !== String(S[key])) use(t);
+  };
+  box.addEventListener("change", commit);
+  box.addEventListener("keydown", (e) => { if (e.key === "Enter") { box.blur(); commit(); } });
+}
 function bindSettings() {
-  $("sBelt").value = S.belt; $("sUg").value = S.ug; $("sGen").value = S.gen;
+  comboSetting("sBelt", "sBeltC", "belt", (t) => { const v = Number(t); return t !== "" && Number.isFinite(v) && v > 0; });
+  comboSetting("sUg", "sUgC", "ug", (t) => /^\d+$/.test(t) && Number(t) <= 1000);
+  $("sGen").value = S.gen;
   $("sArm").checked = S.arm; $("sGuess").checked = S.guess; $("sAnim").checked = S.anim; $("sNum").checked = S.nums;
-  $("sBelt").addEventListener("change", () => { S.belt = $("sBelt").value; store.set("belt", S.belt); recalc(); });
-  $("sUg").addEventListener("change", () => { S.ug = $("sUg").value; store.set("ug", S.ug); recalc(); });
   $("sGen").addEventListener("change", () => { S.gen = $("sGen").value; store.set("gen", S.gen); recalc(); });
   $("sArm").addEventListener("change", () => { S.arm = $("sArm").checked; store.set("arm", S.arm); recalc(); });
   $("sGuess").addEventListener("change", () => { S.guess = $("sGuess").checked; store.set("guess", S.guess); recalc(); });
